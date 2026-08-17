@@ -26,7 +26,7 @@ pages, confirmed across networks — a genuine outage, not a local block).
 | `energy_met_mu` | `Energy Met` | direct |
 | `energy_shortage_mu` | `Energy Shortage` | direct |
 | `peak_met_mw` | `Max Demand Met` | direct — this is peak *met*, not peak *demand* |
-| `peak_demand_mw` | **derived**: `Max Demand Met + Shortage During Peak` | dataset has no direct "peak demand" column; reconstructed as met + shortfall (shortage = demand that couldn't be met) |
+| `peak_demand_mw` | **derived**: `Max Demand Met + Shortage During Peak` | dataset has no direct "peak demand" column; reconstructed as met + shortfall (shortage = demand that couldn't be met). **Limitation:** Derived as Max Demand Met + Shortage During Peak. Exact on ~91% of rows (zero recorded shortage); on the ~9% of rows with nonzero shortage, error can reach several hundred MW at the tail (95th percentile ≈550 MW, worst case ≈3,311 MW). This means peak-stress estimates on the most severe shortage days carry the most uncertainty — precisely the days this project's headline findings focus on. |
 
 Unused columns present in the source but not carried into staging: `Drawl Schedule`,
 `OD(+) / UD(-)`, `Max OD` (over/under-drawal figures — not part of the current 5-field
