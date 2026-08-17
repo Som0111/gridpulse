@@ -1,5 +1,59 @@
 # GridPulse — Data Dictionary
 
+## Backfill source note (2026-08-17)
+
+Historical backfill (2020-01-01 to 2025-03-31) uses the documented Kaggle fallback dataset
+because `report.grid-india.in` has been unreachable for multiple days (DNS NXDOMAIN + broken
+pages, confirmed across networks — a genuine outage, not a local block).
+
+- **Dataset:** [`preygle/indian-power-demand-and-shortage-data-2020-2025`](https://www.kaggle.com/datasets/preygle/indian-power-demand-and-shortage-data-2020-2025)
+  on Kaggle, sourced from the same Grid-India/POSOCO PSP reports.
+- **License: MIT** (as shown on the dataset's Kaggle page at download time — note this
+  corrects an earlier assumption that it was CC BY 4.0).
+- **Coverage:** 2020-01-01 through 2025-03-31, 65,178 tidy rows across 34 states after
+  cleaning (see below).
+- **Parser:** `src/parse_kaggle_backfill.py` -> writes `data/staging/state_daily.csv` in the
+  same tidy shape (`report_date, state, energy_met_mu, energy_shortage_mu, peak_demand_mw,
+  peak_met_mw`) that the live parser (`parse_psp.py`, not yet built) will also produce, so
+  live rows can append onto the same table without reshaping.
+
+**Field mapping — 4 of 5 target columns are direct, 1 is derived:**
+
+| Target field | Kaggle source column | Notes |
+|---|---|---|
+| `report_date` | `Date` | direct |
+| `state` | `State` | normalized via STATE_NAME_MAP, see below |
+| `energy_met_mu` | `Energy Met` | direct |
+| `energy_shortage_mu` | `Energy Shortage` | direct |
+| `peak_met_mw` | `Max Demand Met` | direct — this is peak *met*, not peak *demand* |
+| `peak_demand_mw` | **derived**: `Max Demand Met + Shortage During Peak` | dataset has no direct "peak demand" column; reconstructed as met + shortfall (shortage = demand that couldn't be met) |
+
+Unused columns present in the source but not carried into staging: `Drawl Schedule`,
+`OD(+) / UD(-)`, `Max OD` (over/under-drawal figures — not part of the current 5-field
+schema; revisit if a future analysis needs them).
+
+**Format drift found in this dataset (state-name normalization, `STATE_NAME_MAP` in
+`parse_kaggle_backfill.py`):** `HP`->Himachal Pradesh, `MP`->Madhya Pradesh, `ER
+Odisha`->Odisha, `NR UP`->Uttar Pradesh, `SR Karnataka`->Karnataka, `NER
+Meghalaya`->Meghalaya, `WR Maharashtra`->Maharashtra, `DD`->Daman and Diu,
+`DNH`->Dadra and Nagar Haveli, `J&K(UT) & Ladakh(UT)`->Jammu and Kashmir and Ladakh (two UTs
+merged into a single row in the source — noted as a limitation, not split).
+
+**Excluded rows — not states/UTs, kept out of `dim_state`-bound data:** `DVC` (Damodar
+Valley Corporation, a utility spanning West Bengal/Jharkhand, not a state) and `Essar
+steel` (a private bulk consumer). 3,834 rows excluded for this reason; visible in the
+parser's validation report, not silently dropped.
+
+**Known gaps:** ~5-9% nulls per numeric column in the raw source (real gaps, not a parsing
+bug) — `energy_met_mu` 3,153 nulls, `energy_shortage_mu` 3,143, `peak_demand_mw` /
+`peak_met_mw` 4,195 each, out of 65,178 rows.
+
+**Next step once `report.grid-india.in` recovers:** backfill live data from 2025-04-01
+onward (where Kaggle coverage ends) using `download_psp.py` + `parse_psp.py`, then the live
+source takes over entirely for the daily automated update (Phase 5). The live parser must
+produce the exact same 6-column tidy shape as this backfill so the two sources union
+cleanly in `fact_state_daily`.
+
 ## Status
 
 **Pending:** Build Manual Phase 1.1, Steps 8-10 (manually inspecting the PSP report source in a
