@@ -3,3 +3,4 @@ data/staging/
 .env
 __pycache__/
 .ipynb_checkpoints/
+helping_guide/
