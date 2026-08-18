@@ -198,7 +198,14 @@ def print_summary(conn) -> None:
         print(f"  {region}: {count}")
 
 
-def main(since: str | None) -> None:
+def main(since: str | None) -> int:
+    """Returns the number of rows upserted this run.
+
+    WHY it returns a count (rather than just printing, as before): Phase 5's
+    daily_update.py needs to detect a real bug (report downloaded and
+    parsed, but somehow 0 rows loaded) vs. a normal run — it can't tell the
+    difference by scraping stdout.
+    """
     load_dotenv()
     import os
 
@@ -207,6 +214,15 @@ def main(since: str | None) -> None:
     df = pd.read_csv(STAGING_PATH, parse_dates=["report_date"])
     if since:
         df = df[df["report_date"] >= pd.Timestamp(since)]
+
+    if df.empty:
+        # WHY this guard: without it, df["report_date"].min()/.max() below
+        # would be NaT and crash seed_dim_date — an empty --since window
+        # (e.g. staging wasn't updated with today's row yet) should be a
+        # clean "0 rows" result, not a crash.
+        print("no staging rows match --since filter; nothing to load")
+        return 0
+
     df["report_date"] = df["report_date"].dt.date
 
     with engine.begin() as conn:
@@ -216,6 +232,8 @@ def main(since: str | None) -> None:
         upserted = load_facts(engine, conn, df)
         print(f"rows upserted this run: {upserted}")
         print_summary(conn)
+
+    return upserted
 
 
 if __name__ == "__main__":

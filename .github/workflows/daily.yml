@@ -1,0 +1,34 @@
+name: daily-grid-update
+on:
+  schedule:
+    - cron: "30 5 * * *" # 05:30 UTC = 11:00 IST, after report publication
+  workflow_dispatch: # manual run button — use this to test
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      # WHY key includes github.run_id: automation_state.json changes every
+      # run. A fixed key would exact-match after the first run, and
+      # actions/cache skips re-saving on an exact hit — the "consecutive
+      # zero-row loads" counter would freeze forever. Making the key unique
+      # per run guarantees a save every time, while restore-keys' stable
+      # prefix falls back to the most recent previous run's cache (persists
+      # across commits/code changes, per the requirement).
+      - name: Restore automation state cache
+        uses: actions/cache@v4
+        with:
+          path: data/raw/automation_state.json
+          key: gridpulse-automation-state-${{ github.run_id }}
+          restore-keys: |
+            gridpulse-automation-state-
+      - name: Run daily update
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python src/daily_update.py

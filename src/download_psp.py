@@ -72,6 +72,38 @@ def fetch_one(session: requests.Session, url: str) -> requests.Response | None:
     return None
 
 
+def download_one(session: requests.Session, d: date) -> tuple[Path | None, str]:
+    """Attempt to get one date's report, skipping if already on disk.
+
+    WHY this is split out from download_range: daily_update.py (Phase 5)
+    needs to download exactly one date and act on the outcome
+    programmatically, without the CLI range/summary-printing behavior.
+    Returns (path_or_None, status) where status is one of "skipped",
+    "downloaded", "failed" — download_range below is just a thin loop
+    over this so both callers share one code path.
+    """
+    year_dir = RAW_DIR / str(d.year)
+    urls = build_urls(d)
+
+    existing = next(
+        (year_dir / Path(u).name for u in urls if (year_dir / Path(u).name).exists()),
+        None,
+    )
+    if existing:
+        return existing, "skipped"
+
+    for url in urls:
+        resp = fetch_one(session, url)
+        time.sleep(SLEEP_SECONDS)
+        if resp is not None:
+            year_dir.mkdir(parents=True, exist_ok=True)
+            dest = year_dir / Path(url).name
+            dest.write_bytes(resp.content)
+            return dest, "downloaded"
+
+    return None, "failed"
+
+
 def download_range(start: date, end: date) -> None:
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
@@ -82,33 +114,14 @@ def download_range(start: date, end: date) -> None:
     downloaded = skipped = failed = 0
 
     for d in date_range(start, end):
-        year_dir = RAW_DIR / str(d.year)
-        urls = build_urls(d)
-
-        # Skip if either extension already exists on disk.
-        existing = next(
-            (year_dir / Path(u).name for u in urls if (year_dir / Path(u).name).exists()),
-            None,
-        )
-        if existing:
-            print(f"skip  {d}  (already have {existing.name})")
+        path, status = download_one(session, d)
+        if status == "skipped":
+            print(f"skip  {d}  (already have {path.name})")
             skipped += 1
-            continue
-
-        saved = False
-        for url in urls:
-            resp = fetch_one(session, url)
-            time.sleep(SLEEP_SECONDS)
-            if resp is not None:
-                year_dir.mkdir(parents=True, exist_ok=True)
-                dest = year_dir / Path(url).name
-                dest.write_bytes(resp.content)
-                print(f"OK    {d}  -> {dest}")
-                downloaded += 1
-                saved = True
-                break
-
-        if not saved:
+        elif status == "downloaded":
+            print(f"OK    {d}  -> {path}")
+            downloaded += 1
+        else:
             print(f"FAIL  {d}  (no format available)")
             with failed_path.open("a", encoding="utf-8") as f:
                 f.write(f"{d.isoformat()}\n")
