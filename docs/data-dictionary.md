@@ -48,6 +48,54 @@ parser's validation report, not silently dropped.
 bug) — `energy_met_mu` 3,153 nulls, `energy_shortage_mu` 3,143, `peak_demand_mw` /
 `peak_met_mw` 4,195 each, out of 65,178 rows.
 
+## Completeness threshold for national daily aggregates (2026-08-18)
+
+**Discovered:** the Power BI national trend chart showed several sharp false crash-to-zero
+spikes (mid-2020, early/mid-2022, mid-2023, mid-2024, near 2025). Traced to 12 specific
+dates where 33-35 of the 34 states have a NULL `energy_met_mu` in the raw source, but 1-2
+states still carry a value — on 8 of the 12 dates that surviving value is itself a literal
+`0.0`. Because SQL/pandas `SUM()` ignores NULLs rather than propagating them, summing
+`energy_met_mu` across states for these dates produces a tiny but non-NULL "real-looking"
+number (0 to 251 MU, vs. a typical day's ~2,500-4,000+ MU) instead of an obvious gap —
+invisible to a simple null-filter, but a glaring false spike in any trend chart. Confirmed
+this originates in the raw Kaggle CSV itself (all 36 rows present for these dates, just
+almost all NULL), not introduced by our parser or loader.
+
+**The 12 known bad dates:** 2020-02-29, 2020-07-12, 2020-07-19, 2020-08-15, 2020-08-18,
+2021-10-09, 2022-06-11, 2022-06-19, 2023-01-19, 2023-07-23, 2024-04-17, 2025-03-06.
+
+**Unconfirmed hypothesis:** Himachal Pradesh is the one state that "survives" on every
+single one of these 12 dates (joined by Madhya Pradesh on 3 of them). This is suspicious
+enough to flag but has not been investigated further — possibly HP/MP occupy a position
+(alphabetical, or in whatever batch process produced the Kaggle author's original scrape)
+that made their rows resilient to whatever caused the rest of that day's batch to fail.
+Not confirmed; out of scope to dig into the Kaggle dataset's own scraping code.
+
+**Threshold rule:** a day's national total is only trusted if **at least 30 of 34 states**
+(~88%) have a non-null `energy_met_mu`; below that, the national total is `NULL`, not a
+misleading small number. 30/34 was chosen by inspecting the real distribution of
+`states_reporting` across all 1,917 days, not picked arbitrarily: 1,873 days (97.7%) have
+30-34 states reporting, while only 44 days (2.3%) fall below 30 — and those 44 are
+themselves concentrated at the extreme low end (29 of the 44 have 0-2 states reporting).
+There's a sharp natural cliff at 30, not a gray zone the threshold cuts through.
+
+**Where implemented:**
+- `sql/12_dashboard_view.sql` — `v_dashboard_daily` now carries `states_reporting_energy`
+  (a per-`report_date` count, same value on every state's row for that date) and
+  `is_complete_day` (boolean, `states_reporting_energy >= 30`), so any Power BI measure or
+  downstream query can filter on it.
+- `sql/13_national_daily_validated.sql` — `v_national_daily`, a pre-aggregated national
+  daily total with the threshold already applied (`NULL` on incomplete days). This is what
+  the Power BI National Pulse trend chart and any future daily national-total query should
+  read from, instead of a raw `SUM(energy_met_mu) GROUP BY report_date`.
+- Verified against Neon: all 12 known bad dates now return `NULL` national totals instead
+  of the fake small numbers; total nulled days = 44, matching the distribution above exactly.
+
+**Not yet applied:** monthly/other coarser aggregates (e.g. `sql/02_national_trend.sql`)
+still use a plain `SUM()`. At monthly grain a single bad day dilutes into ~30 days of real
+data (a few percent understatement, not a visible false spike), so this was judged out of
+scope for this fix — flagged here in case a future pass wants the same treatment there.
+
 **Next step once `report.grid-india.in` recovers:** backfill live data from 2025-04-01
 onward (where Kaggle coverage ends) using `download_psp.py` + `parse_psp.py`, then the live
 source takes over entirely for the daily automated update (Phase 5). The live parser must
