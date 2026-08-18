@@ -165,8 +165,6 @@ python-json-logger==4.1.0
 python-multipart==0.0.32
 python-slugify==8.0.4
 pytz==2026.3.post1
-pywin32==312
-pywinpty==3.0.5
 PyYAML==6.0.3
 pyzmq==27.1.0
 rapidocr==3.9.2
@@ -234,7 +232,6 @@ webencodings==0.5.1
 websocket-client==1.9.0
 websockets==17.0.1
 widgetsnbextension==4.0.15
-win32_setctime==1.2.0
 xlrd==2.0.2
 xxhash==4.0.0
 yarl==1.24.5
