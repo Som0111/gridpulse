@@ -27,3 +27,13 @@ CREATE TABLE IF NOT EXISTS fact_state_daily (
   loaded_at          TIMESTAMPTZ DEFAULT now(),
   PRIMARY KEY (report_date, state_id)
 );
+
+CREATE TABLE IF NOT EXISTS fact_weather_daily (
+  report_date   DATE REFERENCES dim_date(date_id),
+  state_id      INT  REFERENCES dim_state(state_id),
+  tmax_c        NUMERIC,
+  tmin_c        NUMERIC,
+  tmean_c       NUMERIC,
+  loaded_at     TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (report_date, state_id)
+);
