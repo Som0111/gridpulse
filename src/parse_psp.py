@@ -22,6 +22,18 @@ these same PSP reports, but still a guess, not a confirmed inspection.
 The header-row anchor-search logic is written to be robust to reasonable
 variation for exactly this reason.
 
+REMINDER for real-file validation day: pay special attention to whether
+the assumed header/anchor text actually matches what's really in the
+sheet, not just whether the file parses without an exception — a wrong
+guess that still "works" (matches nothing, or matches the wrong cell) is
+worse than an obvious crash. Note "Power Supply Position" itself is NOT
+something the code matches against — it only appears as flavor text in
+the synthetic fixtures' banner rows (tests/fixtures/make_fixtures.py) and
+plays no role in ANCHOR_STATE or COL_KEYWORDS. The strings that actually
+matter and were inferred rather than observed are: the "State" anchor
+cell (ANCHOR_STATE) and the energy/met/shortage/demand column-header
+keywords (COL_KEYWORDS) — check those against the real sheet first.
+
 WHY this exists: report_psp.py's XLS/PDF downloads are opaque binary/HTML
 blobs until parsed. This turns them into the same tidy 6-column shape
 parse_kaggle_backfill.py already produces (report_date, state,
