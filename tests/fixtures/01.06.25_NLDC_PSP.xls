@@ -1,0 +1,60 @@
+<table border="1" class="dataframe">
+  <tbody>
+    <tr>
+      <td>State</td>
+      <td>Energy Met(MU)</td>
+      <td>Energy Shortage(MU)</td>
+      <td>Max.Demand Met(MW)</td>
+      <td>Shortage during Max.Demand(MW)</td>
+    </tr>
+    <tr>
+      <td>Andhra Pradesh</td>
+      <td>170.1</td>
+      <td>0</td>
+      <td>8561</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Bihar</td>
+      <td>82.0</td>
+      <td>0</td>
+      <td>4656</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Delhi</td>
+      <td>81.0</td>
+      <td>0</td>
+      <td>4108</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Punjab</td>
+      <td>200.0</td>
+      <td>0</td>
+      <td>9000</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Odisha</td>
+      <td>90.0</td>
+      <td>0.1</td>
+      <td>4200</td>
+      <td>10</td>
+    </tr>
+    <tr>
+      <td>NR</td>
+      <td>361.1</td>
+      <td>0</td>
+      <td>17108</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>All India</td>
+      <td>623.1</td>
+      <td>0.1</td>
+      <td>30525</td>
+      <td>10</td>
+    </tr>
+  </tbody>
+</table>
