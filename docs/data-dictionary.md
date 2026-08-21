@@ -102,6 +102,39 @@ source takes over entirely for the daily automated update (Phase 5). The live pa
 produce the exact same 6-column tidy shape as this backfill so the two sources union
 cleanly in `fact_state_daily`.
 
+## Power BI Shape Map: India states TopoJSON (2026-08-21)
+
+`dashboards/india_states.json` — state boundaries for the State Explorer page's choropleth.
+
+- **Source:** [`geohacker/india`](https://github.com/geohacker/india), `state/india_telengana.geojson`.
+  **License: MIT**, confirmed via GitHub's API (`"license": {"key": "mit", ...}`) — two other
+  candidate sources (`udit-001/india-maps-data`, `shuklaneerajdev/IndiaStateTopojsonFiles`) were
+  rejected because GitHub's API showed `"license": null` for both (no declared license means
+  default copyright applies, not freely usable).
+- Converted GeoJSON -> TopoJSON via `geo2topo` (Power BI's Shape Map visual requires TopoJSON,
+  not GeoJSON) and simplified via `toposimplify` — 18.8 MB -> 155 KB. Two tiny island UTs
+  (Andaman & Nicobar, Lakshadweep) were dropped by the simplification pass; not a problem since
+  neither is in `dim_state` (outside Grid-India's mainland grid coverage anyway).
+- Renamed `Orissa`->`Odisha` and `Uttaranchal`->`Uttarakhand` directly in the file (same
+  geometry, just outdated English names) and added a clean `state_name` property so 31 of the
+  34 `dim_state` names match this file's shapes exactly, no further mapping needed.
+
+**Known limitation — Jammu and Kashmir and Ladakh:** this map predates the 2019 Jammu &
+Kashmir/Ladakh split, so it only has a `"Jammu and Kashmir"` shape that does **not** include
+Ladakh's territory. `dim_state` has these merged into a single row, `"Jammu and Kashmir and
+Ladakh"` (see the Kaggle backfill's format-drift note above — this was already a merged row in
+the source data, not something introduced by the map). Rather than relabel the shape's own
+`state_name` property (which would misrepresent the polygon as covering land it doesn't), the
+map is left showing the true `"Jammu and Kashmir"` boundary, and a **display-only** alias is
+applied in Power BI instead: a calculated column on `dim_state` (`Map Display Name`, see
+`docs/dax-measures.md`) returns `"Jammu and Kashmir"` when `state_name` is `"Jammu and Kashmir
+and Ladakh"`, used only as the Shape Map visual's Location field. The underlying database and
+every other visual/measure still use the real, unmodified `state_name` — this mapping exists
+in exactly one place (one calculated column) purely so the choropleth renders instead of
+leaving that state blank. Practical effect: Ladakh's own demand numbers appear on the map
+merged into the Jammu-and-Kashmir-shaped area, since no separate Ladakh shape exists in this
+source — a visual approximation, not a data change.
+
 ## Status
 
 **Pending:** Build Manual Phase 1.1, Steps 8-10 (manually inspecting the PSP report source in a

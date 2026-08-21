@@ -162,3 +162,33 @@ AVERAGEX(
 Inherits the completeness gate via `[Total Energy Met MU]` — an incomplete
 day in the 30-day window contributes blank rather than a fake low value, so
 `AVERAGEX` correctly excludes it from the average instead of dragging it down.
+
+## Calculated columns
+
+Unlike the measures above, a Shape Map visual's Location field needs a
+plain column (categorical field to bind shapes to), not a measure —
+these are added on `dim_state` in Power BI's Data view (Table tools ->
+New column), not the Measures table.
+
+### Map Display Name
+
+**Display-only alias for the State Explorer choropleth.** `dashboards/india_states.json`
+(see `docs/data-dictionary.md`) predates the 2019 Jammu & Kashmir/Ladakh split, so it only
+has a `"Jammu and Kashmir"` shape — no separate Ladakh shape exists. `dim_state[state_name]`
+has these merged into one row, `"Jammu and Kashmir and Ladakh"`, which won't string-match
+the map's shape. This column exists ONLY so the Shape Map visual has something that matches;
+every other visual, slicer, and measure should keep using `dim_state[state_name]` directly,
+never this column — it exists in exactly one place for exactly one purpose.
+
+```dax
+Map Display Name =
+IF(
+    dim_state[state_name] = "Jammu and Kashmir and Ladakh",
+    "Jammu and Kashmir",
+    dim_state[state_name]
+)
+```
+
+**Usage:** set the State Explorer Shape Map visual's Location field to `Map Display Name`
+instead of `state_name`. Every other page/visual keeps using `state_name` unchanged — the
+underlying data is not altered, only this one visual's shape-matching key.
