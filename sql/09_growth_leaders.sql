@@ -2,6 +2,10 @@
 -- consumption, financial-year over financial-year?
 -- Expected output shape: ~34 rows (one per state with enough history),
 -- columns: state_name, fy_pairs_used, avg_yoy_growth_pct.
+-- Key technique: a CTE aggregating one row per (state, financial year),
+-- self-joined to the next FY on state_id + fy_start_year+1, to compute
+-- FY-over-FY growth without a window LAG (self-join is more explicit
+-- about which two specific years are being compared).
 --
 -- Approach: build one row per (state, financial year) total, keeping only
 -- FYs with >=350 reported days (excludes the partial first FY 2019-2020,

@@ -6,6 +6,10 @@
 -- backfilled history, and how many?
 -- Expected output shape: ~34 rows (one per state), columns: state_name,
 -- expected_days, actual_days, missing_days, pct_missing.
+-- Key technique: generate_series() to build the full expected calendar,
+-- CROSS JOIN with dim_state, then LEFT JOIN to fact_state_daily so
+-- missing (state, date) combinations surface as NULL rows to count,
+-- rather than silently not existing in the result at all.
 
 WITH date_bounds AS (
     SELECT MIN(report_date) AS min_date, MAX(report_date) AS max_date

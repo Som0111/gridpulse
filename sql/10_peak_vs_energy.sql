@@ -4,6 +4,10 @@
 -- Expected output shape: ~34 rows (one per state), columns: state_name,
 -- avg_peak_met_mw, avg_demand_mw (energy converted to an average-MW
 -- basis), load_factor.
+-- Key technique: unit-normalize energy (MU/day) to an average-MW basis
+-- (energy_mu * 1000 / 24) so it's directly comparable to peak_met_mw on
+-- the same scale — the load_factor ratio only means something once both
+-- sides are in MW.
 --
 -- Business interpretation: load_factor = average demand / peak demand.
 -- A load factor near 1.0 means the state draws close to its peak all the

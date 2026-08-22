@@ -2,6 +2,9 @@
 -- and what share of national demand does each represent?
 -- Expected output shape: 10 rows, columns: rank, state_name,
 -- total_energy_met_mu, pct_share_national.
+-- Key technique: RANK() OVER (ORDER BY total DESC) for the ranking, plus
+-- a window SUM() OVER () (no PARTITION BY) to get the grand total for a
+-- percent-of-whole share, both in one pass without a self-join.
 
 WITH state_totals AS (
     SELECT

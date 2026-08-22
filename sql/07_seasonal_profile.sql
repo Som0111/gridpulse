@@ -2,6 +2,8 @@
 -- monsoon, and winter, per state — which states are most seasonal?
 -- Expected output shape: ~34 rows (one per state), columns: state_name,
 -- avg_summer_mw, avg_monsoon_mw, avg_winter_mw, summer_to_winter_ratio.
+-- Key technique: AVG(...) FILTER (WHERE season = 'X') to pivot 3 seasons
+-- into 3 columns in one pass, instead of 3 separate GROUP BY queries.
 
 SELECT
     ds.state_name,

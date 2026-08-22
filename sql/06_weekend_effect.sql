@@ -3,6 +3,9 @@
 -- Expected output shape: 5 rows (one per region: NR/WR/SR/ER/NER),
 -- columns: region_code, avg_weekday_demand_mw, avg_weekend_demand_mw,
 -- pct_difference.
+-- Key technique: CASE to bucket day_of_week into weekday/weekend, then a
+-- self-join of the two bucket averages per region to compute % difference
+-- directly in SQL rather than post-processing two separate query results.
 
 WITH bucketed AS (
     SELECT

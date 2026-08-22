@@ -3,6 +3,8 @@
 -- Expected output shape: ~63 rows (one per calendar month, Jan 2020 to
 -- Mar 2025), columns: month, national_energy_met_mu, prior_year_mu,
 -- yoy_growth_pct.
+-- Key technique: LAG(value, 12) OVER (ORDER BY month) to pull the same
+-- calendar month from 12 rows back (one year prior), for same-period YoY %.
 
 WITH monthly AS (
     SELECT

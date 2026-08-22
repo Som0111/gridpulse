@@ -1,5 +1,11 @@
 -- sql/00_schema.sql
--- GridPulse star schema. Safe to re-run (IF NOT EXISTS on every table).
+-- Purpose: the GridPulse star schema — 2 dimension tables (dim_state,
+-- dim_date) and 2 fact tables (fact_state_daily, fact_weather_daily).
+-- Key technique: CREATE TABLE IF NOT EXISTS on every table (safe to
+-- re-run) + composite PRIMARY KEY (report_date, state_id) on both fact
+-- tables, which is what makes every loader's ON CONFLICT ... DO UPDATE
+-- upsert idempotent by construction — duplicates are impossible, not
+-- just avoided by convention.
 
 CREATE TABLE IF NOT EXISTS dim_state (
   state_id      SERIAL PRIMARY KEY,

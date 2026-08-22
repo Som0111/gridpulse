@@ -6,6 +6,9 @@
 -- fact_state_daily — ~65,178 rows, columns: report_date, state_name,
 -- region_code, energy_met_mu, energy_shortage_mu, peak_demand_mw,
 -- peak_met_mw, tmean_c, is_weekend, season, fin_year.
+-- Key technique: LEFT JOIN to fact_weather_daily (partial coverage must
+-- not drop rows) plus a window COUNT() OVER (PARTITION BY report_date)
+-- to denormalize a date-level completeness flag onto every state row.
 --
 -- WHY LEFT JOIN to fact_weather_daily: weather is only loaded for 8
 -- proxy-city states, not all 34 — an INNER JOIN would silently drop the

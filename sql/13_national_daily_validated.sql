@@ -5,6 +5,8 @@
 -- Expected output shape: one row per report_date (1,917 rows), columns:
 -- report_date, national_energy_met_mu (NULL on incomplete days),
 -- states_reporting.
+-- Key technique: CASE WHEN COUNT(...) >= 30 THEN SUM(...) END — the
+-- omitted ELSE means an incomplete day returns SQL NULL, not a number.
 --
 -- WHY this exists: see sql/12_dashboard_view.sql's is_complete_day
 -- comment and docs/data-dictionary.md's "Completeness threshold"

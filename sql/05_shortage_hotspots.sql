@@ -4,6 +4,9 @@
 -- the threshold) out of ~34 states x ~21 quarters = ~714 possible rows,
 -- columns: state_name, quarter, days_in_quarter, shortage_days,
 -- pct_days_with_shortage.
+-- Key technique: COUNT(*) FILTER (WHERE ...) to count shortage-days
+-- alongside total days in one pass, then HAVING to filter to states/
+-- quarters clearing the persistence threshold.
 --
 -- Threshold justification: a quarter has ~90 days. Flagging at >=15% of
 -- days (~13+ days) distinguishes a recurring structural issue from a

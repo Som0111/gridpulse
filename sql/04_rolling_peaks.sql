@@ -4,6 +4,8 @@
 -- Expected output shape: one row per (state, report_date) — roughly
 -- 65,000 rows for the full backfill, columns: state_name, report_date,
 -- peak_demand_mw, rolling_30d_max_mw.
+-- Key technique: MAX() OVER (PARTITION BY state_id ORDER BY report_date
+-- ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) — a 30-row rolling max.
 --
 -- WHY ROWS, not RANGE: ROWS BETWEEN 29 PRECEDING AND CURRENT ROW counts
 -- the 30 most recent *physical rows* for that state, regardless of any

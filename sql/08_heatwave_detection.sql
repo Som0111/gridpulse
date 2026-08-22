@@ -3,6 +3,8 @@
 -- Expected output shape: a small subset of the ~65,000 rows (outlier
 -- days only), columns: state_name, report_date, peak_demand_mw,
 -- trailing_90d_mean_mw, trailing_90d_stddev_mw, is_outlier.
+-- Key technique: window AVG()/STDDEV() over a trailing 90-row frame to
+-- build a per-state, self-referential "mean + 2 sigma" outlier threshold.
 --
 -- The trailing window is the 90 days BEFORE today (89 PRECEDING AND
 -- 1 PRECEDING), deliberately excluding the current row — including
